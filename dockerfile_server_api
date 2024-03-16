@@ -1,0 +1,19 @@
+FROM node:latest
+
+LABEL maintainer="maxence COEUR <maxence.coeur@etu.univ-lyon1.fr>"
+
+# Créez le répertoire de l'application
+WORKDIR /home/pouic_serveur
+
+RUN chmod 777 .
+
+ENV MYSQL_USER="root"
+ENV MYSQL_PASSWORD="root"
+ENV MYSQL_DATABASE="db"
+ENV MYSQL_HOST='127.0.0.1'
+ENV MYSQL_PORT='3306'
+ENV API_PORT='80'
+
+EXPOSE 80
+
+CMD ["node", "pouic_serveur.js"]

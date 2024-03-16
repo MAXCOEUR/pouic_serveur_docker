@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb
+    container_name: mysqlpouic   
+    ports:
+      - "3306:3306" 
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pouic
+      MYSQL_USER: maxence
+      MYSQL_PASSWORD: Max2003?
+    volumes:
+      - ./sqldb:/docker-entrypoint-initdb.d
+  api:
+    build:
+      context: .
+      dockerfile: dockerfile_server_api
+    container_name: serveur_api_pouic
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apiNode:/home/pouic_serveur
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=pouic
+      - MYSQL_HOST=mysqlpouic
+      - MYSQL_PORT=3306
+      - API_PORT=3000
+    depends_on:
+      - db
+    links:
+      - db
+    command: ["sh", "-c", "npm install && node pouic_serveur.js"]
