@@ -443,7 +443,7 @@ FROM (
     FROM (
         Select sub.*,count(r.user_uniquePseudo) nbr_reaction ,
         CASE 
-         WHEN r.user_uniquePseudo IS NOT NULL THEN true 
+         WHEN r.user_uniquePseudo = pseudounique THEN true 
          ELSE false 
        END AS a_deja_reagi
 		from (
@@ -474,7 +474,7 @@ BEGIN
     IF pMaxMessageID = 0 THEN
         SELECT subsubsub.*,
         CASE 
-                    WHEN r.user_uniquePseudo IS NOT NULL THEN true 
+                    WHEN r.user_uniquePseudo = pseudounique THEN true 
                     ELSE false 
                 END AS a_deja_reagi
         FROM (
@@ -512,7 +512,7 @@ BEGIN
         -- Inclure la condition seulement si pMaxMessageID n'est pas égal à 0
         SELECT subsubsub.*,
         CASE 
-                    WHEN r.user_uniquePseudo IS NOT NULL THEN true 
+                    WHEN r.user_uniquePseudo = pseudounique THEN true 
                     ELSE false 
                 END AS a_deja_reagi
         FROM (
