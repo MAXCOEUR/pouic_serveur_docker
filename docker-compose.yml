@@ -13,6 +13,7 @@ services:
       MYSQL_PASSWORD: Max2003?
     volumes:
       - ./sqldb:/docker-entrypoint-initdb.d
+    restart: always
   api:
     build:
       context: .
@@ -34,3 +35,4 @@ services:
     links:
       - db
     command: ["sh", "-c", "npm install && node pouic_serveur.js"]
+    restart: always
