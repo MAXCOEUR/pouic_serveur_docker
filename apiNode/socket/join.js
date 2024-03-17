@@ -27,7 +27,7 @@ async function handleJoinConversations(socket, data) {
     console.log('joinConversations :', data.uniquePseudo);
     socket.join(`user:${data.uniquePseudo}`);
     const query = 'select c.id from conversation c join `user-conversation` uc on c.id=uc.id_conversation Where uc.uniquePseudo_user=?';
-    const db = await dbConnexion();
+    const db = dbConnexion();
     db.query(query, [data.uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la création du message:', err);
@@ -36,8 +36,8 @@ async function handleJoinConversations(socket, data) {
                 socket.join(`conversation:${result[i].id}`);
             }
         }
+        db.end();
     });
-    db.end();
 }
 
 function handleJoinConversation(socket, data) {
@@ -54,7 +54,7 @@ async function handleLeaveConversations(socket, data) {
     console.log('leaveConversation :', data.uniquePseudo);
     socket.leave(`user:${data.uniquePseudo}`);
     const query = 'select c.id from conversation c join `user-conversation` uc on c.id=uc.id_conversation Where uc.uniquePseudo_user=?';
-    const db = await dbConnexion();
+    const db = dbConnexion();
     db.query(query, [data.uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la création du message:', err);
@@ -63,6 +63,6 @@ async function handleLeaveConversations(socket, data) {
                 socket.leave(`conversation:${result[i].id}`);
             }
         }
+        db.end();
     });
-    db.end();
 }

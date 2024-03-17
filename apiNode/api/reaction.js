@@ -13,7 +13,7 @@ async function isInConv(token, id_conversation, parametre, func) {
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
     const query = "select * from `user-conversation` where uniquePseudo_user=? and id_conversation=?";
-    const db = await dbConnexion();
+    const db = dbConnexion();
     db.query(query, [uniquePseudo, id_conversation], (err, result) => {
         if (err) {
             console.error('Erreur lors  :', err);
@@ -26,8 +26,8 @@ async function isInConv(token, id_conversation, parametre, func) {
                 func(parametre);
             }
         }
+        db.end();
     });
-    db.end();
 }
 
 router.post('', [
@@ -43,7 +43,7 @@ router.post('', [
     const uniquePseudo = decodedToken.uniquePseudo;
 
     
-    const db = await dbConnexion();
+    
 
     if (id_conversation != undefined) {
         const parametre = {
@@ -56,6 +56,7 @@ router.post('', [
 
         isInConv(token, id_conversation, parametre, postReaction);
     } else {
+        const db = dbConnexion();
         const selectQuery = 'SELECT * FROM reactions WHERE message_id = ? AND user_uniquePseudo = ?';
         db.query(selectQuery, [id_message, uniquePseudo], (err, rows) => {
             if (err) {
@@ -65,22 +66,26 @@ router.post('', [
                 // Si la réaction existe, la supprimer
                 if (rows.length > 0) {
                     const deleteQuery = 'DELETE FROM reactions WHERE message_id = ? AND user_uniquePseudo = ?';
-                    db.query(deleteQuery, [id_message, uniquePseudo], (err, result) => {
+                    const db2 = dbConnexion();
+                    db2.query(deleteQuery, [id_message, uniquePseudo], (err, result) => {
                         if (err) {
                             console.error('Erreur lors de la suppression de la réaction existante :', err);
                             res.status(500).json({ message: 'Erreur lors de la suppression de la réaction existante' });
                         }
                     });
+                    db2.end();
                 }
-
+                
                 // Insérer la nouvelle réaction
                 const insertQuery = 'INSERT INTO reactions (message_id, user_uniquePseudo, emoji) VALUES (?, ?, ?)';
-                db.query(insertQuery, [id_message, uniquePseudo, emoji], (err, result) => {
+                const db2 = dbConnexion();
+                db2.query(insertQuery, [id_message, uniquePseudo, emoji], (err, result) => {
                     if (err) {
                         console.error('Erreur lors de l\'ajout de la réaction :', err);
                         res.status(500).json({ message: 'Erreur lors de l\'ajout de la réaction' });
                     } else {
                         const deleteQuery = 'Select * FROM user WHERE uniquePseudo = ?';
+                        const db3 = dbConnexion();
                         db.query(deleteQuery, [uniquePseudo], (err, result) => {
                             if (err) {
                                 console.error('Erreur lors de l\'ajout de la réaction :', err);
@@ -88,20 +93,23 @@ router.post('', [
                             } else {
                                 res.status(201).json({ message: 'Réaction ajoutée avec succès' });
                             }
+                            db3.end();
                         });
 
                     }
+                    db2.end();
                 });
             }
+            
+            db.end();
         });
     }
-    db.end();
 
 
 });
 
 const postReaction = async function (parametre) {
-    const db = await dbConnexion();
+    const db = dbConnexion();
     // Vérifier si la réaction existe déjà pour cet utilisateur et ce message
     const selectQuery = 'SELECT * FROM reactions WHERE message_id = ? AND user_uniquePseudo = ?';
     db.query(selectQuery, [parametre.id_message, parametre.uniquePseudo], (err, rows) => {
@@ -112,22 +120,26 @@ const postReaction = async function (parametre) {
             // Si la réaction existe, la supprimer
             if (rows.length > 0) {
                 const deleteQuery = 'DELETE FROM reactions WHERE message_id = ? AND user_uniquePseudo = ?';
-                db.query(deleteQuery, [parametre.id_message, parametre.uniquePseudo], (err, result) => {
+                const db2 = dbConnexion();
+                db2.query(deleteQuery, [parametre.id_message, parametre.uniquePseudo], (err, result) => {
                     if (err) {
                         console.error('Erreur lors de la suppression de la réaction existante :', err);
                         parametre.res.status(500).json({ message: 'Erreur lors de la suppression de la réaction existante' });
                     }
+                    db2.end()
                 });
             }
 
             // Insérer la nouvelle réaction
             const insertQuery = 'INSERT INTO reactions (message_id, user_uniquePseudo, emoji) VALUES (?, ?, ?)';
-            db.query(insertQuery, [parametre.id_message, parametre.uniquePseudo, parametre.emoji], (err, result) => {
+            const db2 = dbConnexion();
+            db2.query(insertQuery, [parametre.id_message, parametre.uniquePseudo, parametre.emoji], (err, result) => {
                 if (err) {
                     console.error('Erreur lors de l\'ajout de la réaction :', err);
                     parametre.res.status(500).json({ message: 'Erreur lors de l\'ajout de la réaction' });
                 } else {
                     const deleteQuery = 'Select * FROM user WHERE uniquePseudo = ?';
+                    const db3 = dbConnexion();
                     db.query(deleteQuery, [parametre.uniquePseudo], (err, result) => {
                         if (err) {
                             console.error('Erreur lors de l\'ajout de la réaction :', err);
@@ -136,13 +148,16 @@ const postReaction = async function (parametre) {
                             io.to(`conversation:${parametre.id_conversation}`).emit('newReaction', { 'id_message': parametre.id_message, 'emoji': parametre.emoji, 'user': JSON.stringify(result[0]) });
                             parametre.res.status(201).json({ message: 'Réaction ajoutée avec succès' });
                         }
+                        db3.end();
                     });
 
                 }
+                db2.end();
             });
         }
+        
+        db.end();
     });
-    db.end();
 }
 
 router.get('', [
@@ -158,7 +173,7 @@ router.get('', [
     var nbr_ligne = page * LIGNE_PAR_PAGES;
 
     const query = 'call getReaction(?,?,?);';
-    const db = await dbConnexion();
+    const db = dbConnexion();
     db.query(query, [message_id, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
         if (err) {
             console.error('Erreur lors de la creation du message:', err);
@@ -166,8 +181,8 @@ router.get('', [
         } else {
             res.status(201).send(JSON.stringify(result[0]));
         }
+        db.end();
     });
-    db.end();
 });
 
 router.delete('', [
@@ -181,7 +196,7 @@ router.delete('', [
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
 
-    const db = await dbConnexion();
+    const db = dbConnexion();
 
     const selectQuery = 'delete from reactions where message_id=? and user_uniquePseudo=?';
     db.query(selectQuery, [id_message, uniquePseudo], (err, rows) => {
@@ -191,8 +206,8 @@ router.delete('', [
         } else {
             res.status(201).json({ message: 'Réaction supprimé avec succès' });
         }
+        db.end();
     });
-    db.end();
 
 
 });

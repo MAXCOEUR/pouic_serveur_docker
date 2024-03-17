@@ -36,7 +36,7 @@ async function handleMessage(socket, data,io) {
         const uniquePseudo = decodedToken.uniquePseudo;
 
         const query = 'call CreateMessage(?,?,?,?);';
-        const db = await dbConnexion();
+        const db = dbConnexion();
         db.query(query, [uniquePseudo, data.conversationId, data.messageText,data.id_parent], (err, result) => {
             if (err) {
                 console.error('Erreur lors de la création du message:', err);
@@ -45,8 +45,8 @@ async function handleMessage(socket, data,io) {
                 io.to(`conversation:${data.conversationId}`).emit('recevoirMessage', {message});
                 sendAllNotif(data.conversationId,message)
             }
+            db.end();
         });
-        db.end();
     } catch (error) {
         console.error('Erreur lors de la vérification du token :', error.message);
     }
@@ -56,36 +56,36 @@ async function handleLuAllMessage(socket, data) {
     const uniquePseudo = decodedToken.uniquePseudo;
   
     const query = 'CALL MarkAllUnreadMessagesAsRead(?, ?);';
-    const db = await dbConnexion();
+    const db = dbConnexion();
     db.query(query, [data.conversationId, uniquePseudo], (err, result) => {
       if (err) {
         console.error('Erreur lors de la creation du message:', err);
       } else {
         console.log("luAllMessage "+uniquePseudo+" : "+data.conversationId);
       }
+      db.end();
     });
-    db.end();
 }
 async function handleLuMessage(socket, data) {
     const decodedToken = jwt.verify(data.token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
   
     const query = 'insert into `message-read` (id_message,uniquePseudo_user) values(?,?);';
-    const db = await dbConnexion();
+    const db = dbConnexion();
     db.query(query, [data.messageId, uniquePseudo], (err, result) => {
       if (err) {
         console.error('Erreur lors de la creation du message:', err);
       } else {
         console.log("luAllMessage "+uniquePseudo+" : "+data.messageId);
       }
+      db.end();
     });
-    db.end();
 }
 async function handleupdateMessageNonLu(socket,data,io){
     const decodedToken = jwt.verify(data.token, SECRET_KEY);
     const myUniquePseudo = decodedToken.uniquePseudo;
     const query = "select sum(unread) unread from `user-conversation` uc left join ( 	SELECT m.id_conversation, COUNT(m.id) - IFNULL(COUNT(r.id_message), 0) AS unread     FROM messages m     LEFT JOIN `message-read` r ON m.id = r.id_message     AND r.uniquePseudo_user = ?     GROUP BY m.id_conversation)cc on uc.id_conversation=cc.id_conversation where uc.uniquePseudo_user=? group by uc.uniquePseudo_user;";
-    const db = await dbConnexion();
+    const db = dbConnexion();
     db.query(query, [myUniquePseudo, myUniquePseudo], (err, result) => {
     if (err) {
       console.error('Erreur lors de la recherche du nombre de message non lu :', err);
@@ -98,13 +98,13 @@ async function handleupdateMessageNonLu(socket,data,io){
         }
         io.to(`user:${myUniquePseudo}`).emit('updateMessageNonLu', {unread});
     }
+    db.end();
   });
-  db.end();
 }
 
 async function sendAllNotif(conversationId,message){
   const query = "select c.name,u.tokenFireBase from user u join `user-conversation` uc on u.uniquePseudo=uc.uniquePseudo_user join conversation c on uc.id_conversation=c.id where uc.id_conversation=?;";
-  const db = await dbConnexion();
+  const db = dbConnexion();
   db.query(query, [conversationId], (err, result) => {
     if (err) {
       console.error('Erreur lors de la recherche du nombre de message non lu :', err);
@@ -115,7 +115,7 @@ async function sendAllNotif(conversationId,message){
         }
       }
     }
+    db.end();
   });
-  db.end();
   
 }

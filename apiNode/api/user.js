@@ -26,7 +26,7 @@ router.post('', [
 
   try {
 
-    const db = await dbConnexion();
+    const db =  dbConnexion();
 
     const hashedPassword = await bcrypt.hash(passWord, 10);
 
@@ -57,8 +57,8 @@ router.post('', [
       } else {
         res.status(201).send(JSON.stringify(newUser));
       }
+      db.end();
     });
-    db.end();
   } catch (error) {
     console.error('Erreur lors du hachage du mot de passe:', error);
     res.status(500).send(JSON.stringify({ message: 'Erreur lors de la création de l\'utilisateur' }));
@@ -81,7 +81,7 @@ router.get('/unread', [
   }
 
   try {
-    const db = await dbConnexion();
+    const db =  dbConnexion();
 
     const tokenHeader = req.headers.authorization;
     const token = tokenHeader.split(' ')[1];
@@ -96,8 +96,9 @@ router.get('/unread', [
       } else {
         res.status(200).send(JSON.stringify(result[0]));
       }
-    });
+      
     db.end();
+    });
   } catch (error) {
     console.error('unread:', error);
     res.status(500).send(JSON.stringify({ message: 'Erreur unread' }));
@@ -116,7 +117,7 @@ router.get('', [
   }
 
   try{
-    const db = await dbConnexion();
+    const db =  dbConnexion();
 
     var { search, page } = req.query;
 
@@ -138,8 +139,9 @@ router.get('', [
 
         res.status(201).send(JSON.stringify(result));
       }
-    });
+      
     db.end();
+    });
   }catch(error){
     console.error('unread:', error);
     res.status(500).send(JSON.stringify({ message: 'Erreur unread' }));
@@ -159,7 +161,7 @@ router.post('/login', [
   const { emailOrPseudo, passWord } = req.body;
 
   try {
-    const db = await dbConnexion();
+    const db =  dbConnexion();
 
     const query = 'SELECT * FROM user WHERE email = ? OR uniquePseudo = ?';
     db.query(query, [emailOrPseudo, emailOrPseudo], async (err, results) => {
@@ -187,8 +189,9 @@ router.post('/login', [
           res.status(401).send(JSON.stringify({ message: 'Mot de passe incorrect' }));
         }
       }
+      db.end();
     });
-    db.end();
+    
   } catch (error) {
     console.error('Erreur lors de la vérification de la connexion:', error);
     res.status(500).send('Erreur lors de la vérification de la connexion');
@@ -204,7 +207,7 @@ router.post('/login/token', [
   }
 
   try{
-    const db = await dbConnexion();
+    const db =  dbConnexion();
 
     const tokenHeader = req.headers.authorization;
     const token = tokenHeader.split(' ')[1];
@@ -234,8 +237,8 @@ router.post('/login/token', [
 
         res.status(200).send(jsonResponse);
       }
+      db.end();
     });
-    db.end();
   }
   catch (error){
     console.error('Erreur lors de la vérification de la connexion:', error);
@@ -264,7 +267,7 @@ router.put('', [
   const decodedToken = jwt.verify(token, SECRET_KEY);
   const uniquePseudo_old = decodedToken.uniquePseudo;
 
-  const db = await dbConnexion();
+  const db =  dbConnexion();
 
   var querySelect = 'SELECT * FROM user WHERE uniquePseudo = ?';
   db.query(querySelect, [uniquePseudo_old], async (err, results) => {
@@ -285,7 +288,8 @@ router.put('', [
         };
 
         var queryUpdate = 'UPDATE user SET ? where uniquePseudo = ?';
-        db.query(queryUpdate, [newUser, uniquePseudo_old], (err, result) => {
+        const db2 =  dbConnexion();
+        db2.query(queryUpdate, [newUser, uniquePseudo_old], (err, result) => {
           if (err) {
             console.error('Erreur lors de la création de l\'utilisateur:', err);
 
@@ -303,14 +307,15 @@ router.put('', [
           } else {
             res.status(201).send(JSON.stringify(newUser));
           }
+          db2.end();
         });
       } catch (error) {
         console.error(error);
         res.status(500).send(JSON.stringify({ 'message': 'Erreur lors de la modification de l\'utilisateur' }));
       }
     }
+    db.end();
   });
-  db.end();
   }
   catch (error){
     console.error('Erreur lors de la vérification de la connexion:', error);
@@ -334,7 +339,7 @@ router.put('/mdp', [
   const decodedToken = jwt.verify(token, SECRET_KEY);
   const uniquePseudo = decodedToken.uniquePseudo;
 
-  const db = await dbConnexion();
+  const db =  dbConnexion();
 
   const query = 'SELECT * FROM user WHERE uniquePseudo = ?';
   db.query(query, [uniquePseudo], async (err, results) => {
@@ -352,21 +357,23 @@ router.put('/mdp', [
         user.passWord=hashedPassword;
         
         const query = 'update user set passWord=? WHERE uniquePseudo = ?';
-        db.query(query, [hashedPassword,uniquePseudo], async (err, results) => {
+        const db2 =  dbConnexion();
+        db2.query(query, [hashedPassword,uniquePseudo], async (err, results) => {
           if (err) {
             console.error('Erreur lors de la vérification de la connexion:', err);
             res.status(500).send(JSON.stringify({ message: 'Erreur lors de la vérification de la connexion' }));
           } else {
             res.status(201).send(JSON.stringify(user));
           }
+          db2.end();
         });
       }
       else{
         res.status(500).send(JSON.stringify({ message: 'Erreur lors de la vérification du ancien mdp' }));
       }
     }
+    db.end();
   });
-  db.end();
 }
 )
 router.put('/tokenNotification', [
@@ -383,7 +390,7 @@ router.put('/tokenNotification', [
   const decodedToken = jwt.verify(tokenUser, SECRET_KEY);
   const uniquePseudo = decodedToken.uniquePseudo;
 
-  const db = await dbConnexion();
+  const db =  dbConnexion();
 
   const query = 'update user set tokenFireBase=? WHERE uniquePseudo = ?';
   db.query(query, [token,uniquePseudo], async (err, results) => {
@@ -395,8 +402,8 @@ router.put('/tokenNotification', [
     } else {
       res.status(201).send(JSON.stringify({ message: 'token modifier' }));
     }
+    db.end();
   });
-  db.end();
 }
 )
 
