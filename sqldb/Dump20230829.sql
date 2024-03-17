@@ -364,7 +364,6 @@ FROM messages m
 JOIN user u ON m.uniquePseudo_sender = u.uniquePseudo 
 LEFT JOIN file f ON f.id_message = m.id 
 LEFT JOIN `message-read` r ON m.id = r.id_message AND r.uniquePseudo_user = pUniquePseudo
-
 Left join messages pm on m.id_parent=pm.id
 Left join user pu on pm.uniquePseudo_sender=pu.uniquePseudo
 LEFT JOIN file pf ON pf.id_message = pm.id 
@@ -435,7 +434,7 @@ END ;;
 DELIMITER ;
 /*!50003 DROP PROCEDURE IF EXISTS `getMessageOne` */;
 DELIMITER ;;
-CREATE DEFINER=`maxence`@`%` PROCEDURE `getMessageOne`(in id_message int unsigned)
+CREATE DEFINER=`maxence`@`%` PROCEDURE `getMessageOne`(in id_message int unsigned, IN pseudounique VARCHAR(80))
 BEGIN
 SELECT subsubsub.*
 FROM (
