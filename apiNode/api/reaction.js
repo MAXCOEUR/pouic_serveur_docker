@@ -86,7 +86,7 @@ router.post('', [
                     } else {
                         const deleteQuery = 'Select * FROM user WHERE uniquePseudo = ?';
                         const db3 = dbConnexion();
-                        db.query(deleteQuery, [uniquePseudo], (err, result) => {
+                        db3.query(deleteQuery, [uniquePseudo], (err, result) => {
                             if (err) {
                                 console.error('Erreur lors de l\'ajout de la réaction :', err);
                                 res.status(500).json({ message: 'Erreur lors de l\'ajout de la réaction' });

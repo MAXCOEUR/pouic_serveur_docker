@@ -1,6 +1,6 @@
 const mysql = require('mysql2');
 
-const host = (process.env.MYSQL_HOST != undefined)?process.env.MYSQL_HOST:"127.0.0.1";
+const host = (process.env.MYSQL_HOST != undefined)?process.env.MYSQL_HOST:"192.168.0.111";
 const user = (process.env.MYSQL_USER != undefined)?process.env.MYSQL_USER:"root";
 const password = (process.env.MYSQL_PASSWORD != undefined)?process.env.MYSQL_PASSWORD:"root";
 const database = (process.env.MYSQL_DATABASE != undefined)?process.env.MYSQL_DATABASE:"pouic";
