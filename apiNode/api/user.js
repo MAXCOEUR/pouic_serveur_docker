@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
+const { dbConnexion } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
 
 const router = express.Router();
 const { query, body, validationResult } = require('express-validator');
@@ -26,6 +26,7 @@ router.post('', [
 
   try {
 
+    const db = await dbConnexion();
 
     const hashedPassword = await bcrypt.hash(passWord, 10);
 
@@ -37,7 +38,6 @@ router.post('', [
       extension,
       bio
     };
-
     const query = 'INSERT INTO user SET ?';
     db.query(query, newUser, (err, result) => {
       if (err) {
@@ -58,6 +58,7 @@ router.post('', [
         res.status(201).send(JSON.stringify(newUser));
       }
     });
+    db.end();
   } catch (error) {
     console.error('Erreur lors du hachage du mot de passe:', error);
     res.status(500).send(JSON.stringify({ message: 'Erreur lors de la création de l\'utilisateur' }));
@@ -78,21 +79,29 @@ router.get('/unread', [
     // Envoyer une réponse avec les erreurs
     return res.status(400).json({ errors: errors.array() });
   }
-  const tokenHeader = req.headers.authorization;
-  const token = tokenHeader.split(' ')[1];
-  const decodedToken = jwt.verify(token, SECRET_KEY);
-  const myUniquePseudo = decodedToken.uniquePseudo;
 
-  const query = "select sum(unread) unread from `user-conversation` uc left join ( 	SELECT m.id_conversation, COUNT(m.id) - IFNULL(COUNT(r.id_message), 0) AS unread     FROM messages m     LEFT JOIN `message-read` r ON m.id = r.id_message     AND r.uniquePseudo_user = ?     GROUP BY m.id_conversation)cc on uc.id_conversation=cc.id_conversation where uc.uniquePseudo_user=? group by uc.uniquePseudo_user;";
-  db.query(query, [myUniquePseudo, myUniquePseudo], (err, result) => {
-    if (err) {
-      console.error('Erreur lors de la recherche du nombre de message non lu :', err);
-      res.status(500).send(JSON.stringify({ 'message': 'Erreur lors de la recherche du nombre de message non lu' }));
-    } else {
-      res.status(200).send(JSON.stringify(result[0]));
-    }
-  });
+  try {
+    const db = await dbConnexion();
 
+    const tokenHeader = req.headers.authorization;
+    const token = tokenHeader.split(' ')[1];
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    const myUniquePseudo = decodedToken.uniquePseudo;
+
+    const query = "select sum(unread) unread from `user-conversation` uc left join ( 	SELECT m.id_conversation, COUNT(m.id) - IFNULL(COUNT(r.id_message), 0) AS unread     FROM messages m     LEFT JOIN `message-read` r ON m.id = r.id_message     AND r.uniquePseudo_user = ?     GROUP BY m.id_conversation)cc on uc.id_conversation=cc.id_conversation where uc.uniquePseudo_user=? group by uc.uniquePseudo_user;";
+    db.query(query, [myUniquePseudo, myUniquePseudo], (err, result) => {
+      if (err) {
+        console.error('Erreur lors de la recherche du nombre de message non lu :', err);
+        res.status(500).send(JSON.stringify({ 'message': 'Erreur lors de la recherche du nombre de message non lu' }));
+      } else {
+        res.status(200).send(JSON.stringify(result[0]));
+      }
+    });
+    db.end();
+  } catch (error) {
+    console.error('unread:', error);
+    res.status(500).send(JSON.stringify({ message: 'Erreur unread' }));
+  }
 });
 
 router.get('', [
@@ -105,27 +114,36 @@ router.get('', [
     // Envoyer une réponse avec les erreurs
     return res.status(400).json({ errors: errors.array() });
   }
-  var { search, page } = req.query;
 
-  var nbr_ligne = page * LIGNE_PAR_PAGES;
-  search = "%" + search + "%";
+  try{
+    const db = await dbConnexion();
 
-  const tokenHeader = req.headers.authorization;
-  const token = tokenHeader.split(' ')[1];
-  const decodedToken = jwt.verify(token, SECRET_KEY);
-  const myUniquePseudo = decodedToken.uniquePseudo;
+    var { search, page } = req.query;
 
-  const query = "SELECT u.*, CASE WHEN EXISTS (SELECT 1 FROM amis WHERE (demandeur = ? AND receveur = u.uniquePseudo) OR (demandeur = u.uniquePseudo AND receveur = ?)) THEN 1 ELSE 0 END AS sont_amis FROM user u WHERE u.uniquePseudo LIKE ? LIMIT ? OFFSET ?;";
-  db.query(query, [myUniquePseudo, myUniquePseudo, search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
-    if (err) {
-      console.error('Erreur lors de la recherche de l\'utilisateur:', err);
-      res.status(500).send(JSON.stringify({ 'message': 'Erreur lors de la recherche de l\'utilisateur' }));
-    } else {
-      // Convertir les données binaires de l'Avatar en base64
+    var nbr_ligne = page * LIGNE_PAR_PAGES;
+    search = "%" + search + "%";
 
-      res.status(201).send(JSON.stringify(result));
-    }
-  });
+    const tokenHeader = req.headers.authorization;
+    const token = tokenHeader.split(' ')[1];
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    const myUniquePseudo = decodedToken.uniquePseudo; 
+
+    const query = "SELECT u.*, CASE WHEN EXISTS (SELECT 1 FROM amis WHERE (demandeur = ? AND receveur = u.uniquePseudo) OR (demandeur = u.uniquePseudo AND receveur = ?)) THEN 1 ELSE 0 END AS sont_amis FROM user u WHERE u.uniquePseudo LIKE ? LIMIT ? OFFSET ?;";
+    db.query(query, [myUniquePseudo, myUniquePseudo, search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
+      if (err) {
+        console.error('Erreur lors de la recherche de l\'utilisateur:', err);
+        res.status(500).send(JSON.stringify({ 'message': 'Erreur lors de la recherche de l\'utilisateur' }));
+      } else {
+        // Convertir les données binaires de l'Avatar en base64
+
+        res.status(201).send(JSON.stringify(result));
+      }
+    });
+    db.end();
+  }catch(error){
+    console.error('unread:', error);
+    res.status(500).send(JSON.stringify({ message: 'Erreur unread' }));
+  }
 });
 
 // Vérifier la connexion de l'utilisateur
@@ -141,6 +159,8 @@ router.post('/login', [
   const { emailOrPseudo, passWord } = req.body;
 
   try {
+    const db = await dbConnexion();
+
     const query = 'SELECT * FROM user WHERE email = ? OR uniquePseudo = ?';
     db.query(query, [emailOrPseudo, emailOrPseudo], async (err, results) => {
       if (err) {
@@ -168,6 +188,7 @@ router.post('/login', [
         }
       }
     });
+    db.end();
   } catch (error) {
     console.error('Erreur lors de la vérification de la connexion:', error);
     res.status(500).send('Erreur lors de la vérification de la connexion');
@@ -181,34 +202,45 @@ router.post('/login/token', [
     // Envoyer une réponse avec les erreurs
     return res.status(400).json({ errors: errors.array() });
   }
-  const tokenHeader = req.headers.authorization;
-  const token = tokenHeader.split(' ')[1];
-  const decodedToken = jwt.verify(token, SECRET_KEY);
-  const uniquePseudo = decodedToken.uniquePseudo;
 
-  const query = 'SELECT * FROM user WHERE uniquePseudo = ?';
-  db.query(query, [uniquePseudo], async (err, results) => {
-    if (err) {
-      console.error('Erreur lors de la vérification de la connexion:', err);
-      res.status(500).send(JSON.stringify({ message: 'Erreur lors de la vérification de la connexion' }));
-    } else if (results.length === 0) {
-      res.status(401).send(JSON.stringify({ message: 'Email ou @ non trouvé' }));
-    } else {
-      var user = results[0];
+  try{
+    const db = await dbConnexion();
 
-      const token = jwt.sign({ uniquePseudo: user.uniquePseudo, email: user.email }, SECRET_KEY, { expiresIn: '24h' });
+    const tokenHeader = req.headers.authorization;
+    const token = tokenHeader.split(' ')[1];
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    const uniquePseudo = decodedToken.uniquePseudo;
 
-      const responseObj = {
-        user,
-        token
-      };
+    
 
-      const jsonResponse = JSON.stringify(responseObj);
+    const query = 'SELECT * FROM user WHERE uniquePseudo = ?';
+    db.query(query, [uniquePseudo], async (err, results) => {
+      if (err) {
+        console.error('Erreur lors de la vérification de la connexion:', err);
+        res.status(500).send(JSON.stringify({ message: 'Erreur lors de la vérification de la connexion' }));
+      } else if (results.length === 0) {
+        res.status(401).send(JSON.stringify({ message: 'Email ou @ non trouvé' }));
+      } else {
+        var user = results[0];
 
-      res.status(200).send(jsonResponse);
-    }
-  });
+        const token = jwt.sign({ uniquePseudo: user.uniquePseudo, email: user.email }, SECRET_KEY, { expiresIn: '24h' });
 
+        const responseObj = {
+          user,
+          token
+        };
+
+        const jsonResponse = JSON.stringify(responseObj);
+
+        res.status(200).send(jsonResponse);
+      }
+    });
+    db.end();
+  }
+  catch (error){
+    console.error('Erreur lors de la vérification de la connexion:', error);
+    res.status(500).send('Erreur lors de la vérification de la connexion');
+  }
 });
 
 router.put('', [
@@ -223,6 +255,8 @@ router.put('', [
     return res.status(400).json({ errors: errors.array() });
   }
 
+  try{
+
   var { email, uniquePseudo, pseudo, extension, bio } = req.body;
 
   const tokenHeader = req.headers.authorization;
@@ -230,6 +264,7 @@ router.put('', [
   const decodedToken = jwt.verify(token, SECRET_KEY);
   const uniquePseudo_old = decodedToken.uniquePseudo;
 
+  const db = await dbConnexion();
 
   var querySelect = 'SELECT * FROM user WHERE uniquePseudo = ?';
   db.query(querySelect, [uniquePseudo_old], async (err, results) => {
@@ -275,7 +310,12 @@ router.put('', [
       }
     }
   });
-
+  db.end();
+  }
+  catch (error){
+    console.error('Erreur lors de la vérification de la connexion:', error);
+    res.status(500).send('Erreur lors de la vérification de la connexion');
+  }
 
 });
 router.put('/mdp', [
@@ -293,6 +333,8 @@ router.put('/mdp', [
   const token = tokenHeader.split(' ')[1];
   const decodedToken = jwt.verify(token, SECRET_KEY);
   const uniquePseudo = decodedToken.uniquePseudo;
+
+  const db = await dbConnexion();
 
   const query = 'SELECT * FROM user WHERE uniquePseudo = ?';
   db.query(query, [uniquePseudo], async (err, results) => {
@@ -324,6 +366,7 @@ router.put('/mdp', [
       }
     }
   });
+  db.end();
 }
 )
 router.put('/tokenNotification', [
@@ -340,6 +383,8 @@ router.put('/tokenNotification', [
   const decodedToken = jwt.verify(tokenUser, SECRET_KEY);
   const uniquePseudo = decodedToken.uniquePseudo;
 
+  const db = await dbConnexion();
+
   const query = 'update user set tokenFireBase=? WHERE uniquePseudo = ?';
   db.query(query, [token,uniquePseudo], async (err, results) => {
     if (err) {
@@ -351,6 +396,7 @@ router.put('/tokenNotification', [
       res.status(201).send(JSON.stringify({ message: 'token modifier' }));
     }
   });
+  db.end();
 }
 )
 

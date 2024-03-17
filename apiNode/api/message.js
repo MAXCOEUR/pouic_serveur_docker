@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
+const { dbConnexion } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
 const { io } = require('../pouic_serveur.js');
 const fs = require('fs');
 
@@ -12,10 +12,11 @@ const { json } = require('body-parser');
 var path = require('path');
 
 
-function isInConv(token, id_conversation, parametre, func) {
+async function isInConv(token, id_conversation, parametre, func) {
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
     const query = "select * from `user-conversation` where uniquePseudo_user=? and id_conversation=?";
+    const db = await dbConnexion();
     db.query(query, [uniquePseudo, id_conversation], (err, result) => {
         if (err) {
             console.error('Erreur lors  :', err);
@@ -29,12 +30,14 @@ function isInConv(token, id_conversation, parametre, func) {
             }
         }
     });
+    db.end();
 }
 
-function isSenderMessage(token, id_message, parametre, func) {
+async function isSenderMessage(token, id_message, parametre, func) {
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
     const query = "select * from messages where id=? and uniquePseudo_sender=?";
+    const db = await dbConnexion();
     db.query(query, [id_message, uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors  :', err);
@@ -48,6 +51,7 @@ function isSenderMessage(token, id_message, parametre, func) {
             }
         }
     });
+    db.end();
 }
 
 router.get('', [
@@ -86,8 +90,9 @@ router.get('', [
     }
 
 });
-const getMessage = function (parametre) {
+const getMessage = async function (parametre) {
     const query = 'call getMessage(?,?,?,?);';
+    const db = await dbConnexion();
     db.query(query, [parametre.uniquePseudo, parametre.id_conversation, parametre.id_lastMessage, LIGNE_PAR_PAGES], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recuperation des message:', err);
@@ -96,9 +101,11 @@ const getMessage = function (parametre) {
             parametre.res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    db.end();
 }
-const getLastMessage = function (parametre) {
+const getLastMessage = async function (parametre) {
     const query = 'call getMessageLast(?,?,?);';
+    const db = dbConnexion();
     db.query(query, [parametre.uniquePseudo, parametre.id_conversation, LIGNE_PAR_PAGES], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recuperation des message:', err);
@@ -107,6 +114,7 @@ const getLastMessage = function (parametre) {
             parametre.res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    db.end();
 }
 
 router.post('', [
@@ -135,8 +143,9 @@ router.post('', [
 
     isInConv(token, id_conversation, parametre, postMessage);
 });
-const postMessage = function (parametre) {
+const postMessage = async function (parametre) {
     const query = 'call CreateMessage(?,?,?,?);';
+    const db = await dbConnexion();
     db.query(query, [parametre.uniquePseudo, parametre.id_conversation, parametre.message, parametre.id_parent], (err, result) => {
         if (err) {
             console.error('Erreur lors de la creation du message:', err);
@@ -145,6 +154,7 @@ const postMessage = function (parametre) {
             parametre.res.status(201).send(JSON.stringify(result[0][0]));
         }
     });
+    db.end();
 }
 router.post('/upload', uploadFile.single('file'), (req, res) => {
     if (!req.file) {
@@ -176,9 +186,10 @@ router.delete('', [
 
     isSenderMessage(token, id_message, parametre, deleteMessage);
 });
-const deleteMessage = function (parametre) {
+const deleteMessage = async function (parametre) {
 
     const query1 = 'select id_conversation from messages where id=?;';
+    const db = await dbConnexion();
     db.query(query1, [parametre.id_message], (err, result) => {
         let id_message = parseInt(parametre.id_message);
         if (err) {
@@ -226,6 +237,7 @@ const deleteMessage = function (parametre) {
             });
         }
     });
+    db.end();
 
 
 }
@@ -254,11 +266,12 @@ router.put('', [
 
     isSenderMessage(token, id_message, parametre, putMessage);
 });
-const putMessage = function (parametre) {
+const putMessage = async function (parametre) {
     const newMes = {
         message: parametre.message
     }
     const query1 = 'select id_conversation from messages where id=?;';
+    const db = await dbConnexion();
     db.query(query1, [parametre.id_message], (err, result) => {
         if (err) {
             console.error('Erreur lors de la suppression du message:', err);
@@ -279,6 +292,7 @@ const putMessage = function (parametre) {
             });
         }
     });
+    db.end();
 }
 
 module.exports = router;

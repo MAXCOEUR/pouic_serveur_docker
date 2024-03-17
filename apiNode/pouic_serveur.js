@@ -74,7 +74,7 @@ app.use('/api/post/',postRoutes);
 
 
 
-const PORT = process.env.API_PORT;
+const PORT = (process.env.API_PORT != undefined)?process.env.API_PORT:3000;
 server.listen(PORT, () => {
   console.log(`Serveur en écoute sur le port ${PORT}`);
 });

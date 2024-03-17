@@ -1,5 +1,5 @@
 // socketEvents.js
-const { db } = require('../db'); // Importez db depuis le fichier correspondant
+const { dbConnexion } = require('../db'); // Importez db depuis le fichier correspondant
 
 module.exports = {
     handleConnection: (socket) => {
@@ -23,10 +23,11 @@ module.exports = {
     },
 };
 
-function handleJoinConversations(socket, data) {
+async function handleJoinConversations(socket, data) {
     console.log('joinConversations :', data.uniquePseudo);
     socket.join(`user:${data.uniquePseudo}`);
     const query = 'select c.id from conversation c join `user-conversation` uc on c.id=uc.id_conversation Where uc.uniquePseudo_user=?';
+    const db = await dbConnexion();
     db.query(query, [data.uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la création du message:', err);
@@ -36,6 +37,7 @@ function handleJoinConversations(socket, data) {
             }
         }
     });
+    db.end();
 }
 
 function handleJoinConversation(socket, data) {
@@ -48,10 +50,11 @@ function handleLeaveConversation(socket, data) {
     socket.leave(`conversation:${data.idConversation}`);
 }
 
-function handleLeaveConversations(socket, data) {
+async function handleLeaveConversations(socket, data) {
     console.log('leaveConversation :', data.uniquePseudo);
     socket.leave(`user:${data.uniquePseudo}`);
     const query = 'select c.id from conversation c join `user-conversation` uc on c.id=uc.id_conversation Where uc.uniquePseudo_user=?';
+    const db = await dbConnexion();
     db.query(query, [data.uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la création du message:', err);
@@ -61,4 +64,5 @@ function handleLeaveConversations(socket, data) {
             }
         }
     });
+    db.end();
 }

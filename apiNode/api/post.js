@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
+const { dbConnexion } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
 const { io } = require('../pouic_serveur.js');
 const fs = require('fs');
 
@@ -11,10 +11,11 @@ const { authenticateToken } = require('../middleware.js');
 const { json } = require('body-parser');
 var path = require('path');
 
-function isSenderMessage(token, id_message, parametre, func) {
+async function isSenderMessage(token, id_message, parametre, func) {
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
     const query = "select * from messages where id=? and uniquePseudo_sender=?";
+    const db = await dbConnexion();
     db.query(query, [id_message, uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors  :', err);
@@ -28,6 +29,7 @@ function isSenderMessage(token, id_message, parametre, func) {
             }
         }
     });
+    db.end();
 }
 
 router.get('', [
@@ -53,8 +55,9 @@ router.get('', [
     getPost(parametre);
 
 });
-const getPost = function (parametre) {
+const getPost = async function (parametre) {
     const query = 'call getPost(?,?,?);';
+    const db = await dbConnexion();
     db.query(query, [parametre.uniquePseudo, parametre.id_lastMessage, LIGNE_PAR_PAGES], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recuperation des message:', err);
@@ -63,6 +66,7 @@ const getPost = function (parametre) {
             parametre.res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    db.end();
 }
 
 router.get('/childs', [
@@ -81,6 +85,7 @@ router.get('/childs', [
     const uniquePseudo = decodedToken.uniquePseudo;
 
     const query = 'call getPostChild(?,?,?,?);';
+    const db = await dbConnexion();
     db.query(query, [id_post,uniquePseudo, id_lastMessage, LIGNE_PAR_PAGES], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recuperation des message:', err);
@@ -89,6 +94,7 @@ router.get('/childs', [
             res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    db.end();
 
 });
 router.get('/users', [
@@ -108,6 +114,7 @@ router.get('/users', [
 
 
     const query = 'call getPostUser(?,?,?,?);';
+    const db = await dbConnexion();
     db.query(query, [pseudoUnique,uniquePseudo, id_lastMessage, LIGNE_PAR_PAGES], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recuperation des message:', err);
@@ -116,6 +123,7 @@ router.get('/users', [
             res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    db.end();
 
 });
 
@@ -131,6 +139,7 @@ router.get('/one', [
     var { id_message,pseudoUnique } = req.query;
 
     const query = 'call getMessageOne(?,?);';
+    const db = await dbConnexion();
     db.query(query, [id_message,pseudoUnique], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recuperation des message:', err);
@@ -139,6 +148,7 @@ router.get('/one', [
             res.status(201).send(JSON.stringify(result[0][0]));
         }
     });
+    db.end();
 
 });
 
@@ -166,8 +176,9 @@ router.post('', [
     }
     postPost(parametre);
 });
-const postPost = function (parametre) {
+const postPost = async function (parametre) {
     const query = 'call CreatePost(?,?,?);';
+    const db = await dbConnexion();
     db.query(query, [parametre.uniquePseudo, parametre.message, parametre.id_parent], (err, result) => {
         if (err) {
             console.error('Erreur lors de la creation du message:', err);
@@ -176,6 +187,7 @@ const postPost = function (parametre) {
             parametre.res.status(201).send(JSON.stringify(result[0][0]));
         }
     });
+    db.end();
 }
 router.post('/upload', uploadFile.single('file'), (req, res) => {
     if (!req.file) {
@@ -206,9 +218,10 @@ router.delete('', [
 
     isSenderMessage(token, id_message, parametre, deletePost);
 });
-const deletePost = function (parametre) {
+const deletePost = async function (parametre) {
 
     const query1 = 'select id_conversation from messages where id=?;';
+    const db = await dbConnexion();
     db.query(query1, [parametre.id_message], (err, result) => {
         let id_message = parseInt(parametre.id_message);
         if (err) {
@@ -254,6 +267,7 @@ const deletePost = function (parametre) {
             });
         }
     });
+    db.end();
 
 
 }
@@ -282,11 +296,12 @@ router.put('', [
 
     isSenderMessage(token, id_message, parametre, putPost);
 });
-const putPost = function (parametre) {
+const putPost = async function (parametre) {
     const newMes = {
         message: parametre.message
     }
     const query1 = 'select id_conversation from messages where id=?;';
+    const db = await dbConnexion();
     db.query(query1, [parametre.id_message], (err, result) => {
         if (err) {
             console.error('Erreur lors de la suppression du message:', err);
@@ -306,6 +321,7 @@ const putPost = function (parametre) {
             });
         }
     });
+    db.end();
 }
 
 

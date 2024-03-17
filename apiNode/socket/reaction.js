@@ -1,4 +1,4 @@
-const { db } = require('../db');
+const { dbConnexion } = require('../db');
 const { authenticateTokenSocket } = require('../middleware');
 const jwt = require('jsonwebtoken');
 const { SECRET_KEY, uploadFile} = require('../constantes.js');
@@ -29,6 +29,7 @@ async function handlesetReaction(socket,data,io){
         const uniquePseudo = decodedToken.uniquePseudo;
 
         const query = 'call setReaction(?,?,?);';
+        const db = await dbConnexion();
         db.query(query, [data.messgaeId,uniquePseudo, data.reaction], (err, result) => {
             if (err) {
                 console.error('Erreur lors de la création de la reaction:', err);
@@ -39,6 +40,7 @@ async function handlesetReaction(socket,data,io){
 
             }
         });
+        db.end();
     } catch (error) {
         console.error('Erreur lors de la vérification du token :', error.message);
     }
@@ -55,6 +57,7 @@ async function handledeleteReaction(socket,data,io){
         const uniquePseudo = decodedToken.uniquePseudo;
 
         const query = 'DELETE FROM `discution`.`reactions` WHERE (`user_uniquePseudo` = ?) and (`message_id` = ?);';
+        const db = await dbConnexion();
         db.query(query, [uniquePseudo,data.messgaeId], (err, result) => {
             if (err) {
                 console.error('Erreur lors de la création de la reaction:', err);
@@ -63,13 +66,15 @@ async function handledeleteReaction(socket,data,io){
                 io.to(`conversation:${data.conversationId}`).emit('recevoirdeleteReaction', {uniquePseudo,messgaeId});
             }
         });
+        db.end();
     } catch (error) {
         console.error('Erreur lors de la vérification du token :', error.message);
     }
 }
 
-function sendAllNotif(conversationId,message){
+async function sendAllNotif(conversationId,message){
     const query = "select c.name,u.tokenFireBase from user u join `user-conversation` uc on u.uniquePseudo=uc.uniquePseudo_user join conversation c on uc.id_conversation=c.id where uc.id_conversation=?;";
+    const db = await dbConnexion();
     db.query(query, [conversationId], (err, result) => {
       if (err) {
         console.error('Erreur lors de la recherche du nombre de message non lu :', err);
@@ -81,5 +86,6 @@ function sendAllNotif(conversationId,message){
         }
       }
     });
+    db.end();
     
   }

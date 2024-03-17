@@ -1,6 +1,6 @@
 const multer = require('multer');
 const path = require('path');
-const { db } = require('./db');
+const { dbConnexion } = require('./db');
 const fs = require('fs');
 
 const LIGNE_PAR_PAGES = 25;
@@ -53,7 +53,7 @@ const storageFile = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/messages');
   },
-  filename: function (req, file, cb) {
+  filename: async function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const nameFile = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
 
@@ -64,6 +64,7 @@ const storageFile = multer.diskStorage({
     let name = req.body.name;
 
     const query = "INSERT INTO `file` (`id_message`, `linkFile`,`name`) VALUES (?, ?,?);";
+    const db = await dbConnexion();
     db.query(query, [id_message, nameFile, name], (err, result) => {
       if (err) {
         console.error('Erreur lors de la creation du message:', err);

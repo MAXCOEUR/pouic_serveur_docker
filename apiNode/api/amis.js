@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
+const { dbConnexion } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
 const {io} = require('../pouic_serveur.js');
 
 const router = express.Router();
@@ -29,7 +29,8 @@ router.get('', [
     const uniquePseudo = decodedToken.uniquePseudo;
 
     const query = "call GetAmis(?,?,?,?)";
-    db.query(query, [uniquePseudo, search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [uniquePseudo, search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -37,6 +38,7 @@ router.get('', [
             res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    connexion.end();
 });
 router.get('/demande', [
     query('search').exists().withMessage('search requis'),
@@ -59,7 +61,8 @@ router.get('/demande', [
     const uniquePseudo = decodedToken.uniquePseudo;
 
     const query = "SELECT u.* from demandeAmis da join user u on da.demandeur=u.uniquePseudo WHERE da.receveur like ? and da.demandeur like ? LIMIT ? OFFSET ?;";
-    db.query(query, [uniquePseudo,search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [uniquePseudo,search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -67,6 +70,8 @@ router.get('/demande', [
             res.status(201).send(JSON.stringify(result));
         }
     });
+    
+    connexion.end();
 });
 router.get('/demande/nbr', [
     authenticateToken
@@ -82,7 +87,8 @@ router.get('/demande/nbr', [
     const uniquePseudo = decodedToken.uniquePseudo;
 
     const query = "SELECT Count(*) nbrDemande from demandeAmis da join user u on da.demandeur=u.uniquePseudo WHERE da.receveur like ?;";
-    db.query(query, [uniquePseudo], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche du nombre de demande d\'amis :', err);
             res.status(500).send('Erreur lors de la recherche du nombre de demande d\'amis');
@@ -90,6 +96,7 @@ router.get('/demande/nbr', [
             res.status(200).send(JSON.stringify(result[0]));
         }
     });
+    connexion.end();
 });
 router.get('/demande/send', [
     query('search').exists().withMessage('search requis'),
@@ -112,7 +119,8 @@ router.get('/demande/send', [
     const uniquePseudo = decodedToken.uniquePseudo;
 
     const query = "SELECT u.* from demandeAmis da join user u on da.receveur=u.uniquePseudo WHERE da.demandeur like ? and da.receveur like ? LIMIT ? OFFSET ?;";
-    db.query(query, [uniquePseudo, search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [uniquePseudo, search, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -120,6 +128,7 @@ router.get('/demande/send', [
             res.status(201).send(JSON.stringify(result));
         }
     });
+    connexion.end();
 });
 router.get('/isAmis', [
     query('uniquePseudo_send').notEmpty().withMessage('uniquePseudo_send requis'),
@@ -137,7 +146,8 @@ router.get('/isAmis', [
     const uniquePseudo = decodedToken.uniquePseudo;
 
     const query = "select isAmis(?, ?) as reponse;";
-    db.query(query, [uniquePseudo,uniquePseudo_send], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [uniquePseudo,uniquePseudo_send], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -145,6 +155,7 @@ router.get('/isAmis', [
             res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    connexion.end();
 });
 router.delete('', [
     query('uniquePseudo').exists().withMessage('uniquePseudo requis'),
@@ -162,7 +173,8 @@ router.delete('', [
     const MyuniquePseudo = decodedToken.uniquePseudo;
 
     const query = "DELETE FROM amis WHERE (demandeur = ? AND receveur = ?) OR (demandeur = ? AND receveur = ?);";
-    db.query(query, [MyuniquePseudo, uniquePseudo, uniquePseudo, MyuniquePseudo], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [MyuniquePseudo, uniquePseudo, uniquePseudo, MyuniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -170,6 +182,7 @@ router.delete('', [
             res.status(201).send(JSON.stringify(result));
         }
     });
+    connexion.end();
 });
 
 router.delete('/demande', [
@@ -188,7 +201,8 @@ router.delete('/demande', [
     const MyuniquePseudo = decodedToken.uniquePseudo;
 
     const query = "DELETE FROM demandeAmis WHERE (demandeur = ? AND receveur = ?) OR (demandeur = ? AND receveur = ?);";
-    db.query(query, [MyuniquePseudo, uniquePseudo, uniquePseudo, MyuniquePseudo], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [MyuniquePseudo, uniquePseudo, uniquePseudo, MyuniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -196,6 +210,7 @@ router.delete('/demande', [
             res.status(201).send(JSON.stringify(result));
         }
     });
+    connexion.end();
 });
 
 router.delete('/refuse', [
@@ -214,7 +229,8 @@ router.delete('/refuse', [
     const MyuniquePseudo = decodedToken.uniquePseudo;
 
     const query = "DELETE FROM demandeAmis WHERE (demandeur = ? AND receveur = ?) OR (demandeur = ? AND receveur = ?);";
-    db.query(query, [uniquePseudo, MyuniquePseudo, MyuniquePseudo, uniquePseudo], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [uniquePseudo, MyuniquePseudo, MyuniquePseudo, uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -223,6 +239,7 @@ router.delete('/refuse', [
             res.status(201).send(JSON.stringify(result));
         }
     });
+    connexion.end();
 });
 
 router.post('', [
@@ -241,7 +258,8 @@ router.post('', [
     const MyuniquePseudo = decodedToken.uniquePseudo;
 
     const query = "call CreateAmisDemande(?,?);";
-    db.query(query, [MyuniquePseudo, uniquePseudo], (err, result) => {
+    const connexion = await dbConnexion();
+    connexion.query(query, [MyuniquePseudo, uniquePseudo], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recherche de la conversation :', err);
             res.status(500).send('Erreur lors de la recherche de la conversation');
@@ -253,6 +271,7 @@ router.post('', [
             res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    connexion.end();
 });
 
 

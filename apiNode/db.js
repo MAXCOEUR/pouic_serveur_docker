@@ -1,23 +1,26 @@
 const mysql = require('mysql2');
 
-const db = mysql.createPool({
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
-  port: process.env.MYSQL_PORT,
-  waitForConnections: true,
-  connectionLimit: 50,
-  queueLimit: 0
-});
-db.getConnection((err, connection) => {
-  if (err) {
-    console.error('Erreur de connexion à la base de données:', err);
-  } else {
-    console.log('Connecté à la base de données MariaDB');
-    // Libérez la connexion, elle sera automatiquement retournée au pool.
-    connection.release();
-  }
-});
+const host = (process.env.MYSQL_HOST != undefined)?process.env.MYSQL_HOST:"127.0.0.1";
+const user = (process.env.MYSQL_USER != undefined)?process.env.MYSQL_USER:"root";
+const password = (process.env.MYSQL_PASSWORD != undefined)?process.env.MYSQL_PASSWORD:"root";
+const database = (process.env.MYSQL_DATABASE != undefined)?process.env.MYSQL_DATABASE:"pouic";
+const port = (process.env.MYSQL_PORT != undefined)?process.env.MYSQL_PORT:3306;
 
-module.exports = {db};
+function dbConnexion() {
+  try {
+    const connection = mysql.createConnection({
+      host: host,
+      user: user,
+      password: password,
+      database: database,
+      port: port
+    });
+    return connection;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
+
+module.exports = {dbConnexion};

@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
+const { dbConnexion } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
 const {io} = require('../pouic_serveur.js');
 
 const router = express.Router();
@@ -9,10 +9,11 @@ const { LIGNE_PAR_PAGES, SECRET_KEY, uploadConversationImage } = require('../con
 const { authenticateToken } = require('../middleware.js');
 
 
-function isAdmin(token, id_conversation, parametre, func) {
+async function isAdmin(token, id_conversation, parametre, func) {
   const decodedToken = jwt.verify(token, SECRET_KEY);
   const uniquePseudo = decodedToken.uniquePseudo;
   const query = "select * from conversation where uniquePseudo_admin = ? and id=?";
+  const db = await dbConnexion();
   db.query(query, [uniquePseudo, id_conversation], (err, result) => {
     if (err) {
       console.error('Erreur lors  :', err);
@@ -26,6 +27,7 @@ function isAdmin(token, id_conversation, parametre, func) {
       }
     }
   });
+  db.end();
 }
 
 
@@ -64,6 +66,7 @@ router.get('', [
     "ORDER BY c.date_dernier_message DESC "+
     "LIMIT ? "+
     "OFFSET ?;";
+    const db = await dbConnexion();
     db.query(query, [uniquePseudo, search, uniquePseudo, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
     if (err) {
       console.error('Erreur lors de la recherche de la conversation :', err);
@@ -72,6 +75,7 @@ router.get('', [
       res.status(201).send(JSON.stringify(result));
     }
   });
+  db.end();
 });
 
 router.get('/user', [
@@ -104,8 +108,10 @@ router.get('/user', [
   }
   getConvUser(parametre);
 });
-const getConvUser = function (parametre) {
+const getConvUser = async function (parametre) {
   const query = 'select u.*,CASE WHEN EXISTS (SELECT 1 FROM amis WHERE (demandeur = ? AND receveur = u.uniquePseudo) OR (demandeur = u.uniquePseudo AND receveur = ?)) THEN 1 ELSE 0 END AS sont_amis from `user-conversation` uc join user u on uc.uniquePseudo_user=u.uniquePseudo where uc.id_conversation=? and u.uniquePseudo like ? LIMIT ? OFFSET ?;';
+  
+  const db = await dbConnexion();
   db.query(query, [parametre.uniquePseudo, parametre.uniquePseudo, parametre.id_conversation, parametre.search, LIGNE_PAR_PAGES, parametre.nbr_ligne], (err, result) => {
     if (err) {
       console.error('Erreur lors de la création de la conversation:', err);
@@ -114,6 +120,7 @@ const getConvUser = function (parametre) {
       parametre.res.status(201).send(JSON.stringify(result));
     }
   });
+  db.end();
 }
 router.get('/user/short', [
   query('id_conversation').exists().withMessage('id_conversation requis'),
@@ -134,8 +141,9 @@ router.get('/user/short', [
 
   isAdmin(token, id_conversation, parametre, getConvUserShort);
 });
-const getConvUserShort = function (parametre) {
+const getConvUserShort = async function (parametre) {
   const query = 'select uc.uniquePseudo_user from `user-conversation` uc where uc.id_conversation=?;';
+  const db = await dbConnexion();
   db.query(query, [parametre.id_conversation], (err, result) => {
     if (err) {
       console.error('Erreur lors de la création de la conversation:', err);
@@ -144,6 +152,7 @@ const getConvUserShort = function (parametre) {
       parametre.res.status(201).send(JSON.stringify(result));
     }
   });
+  db.end();
 }
 // Créer une conversation
 router.post('', [
@@ -162,6 +171,7 @@ router.post('', [
   const uniquePseudo = decodedToken.uniquePseudo;
 
   const query = 'CALL CreateConversation(?,?,?);';
+  const db = await dbConnexion();
   db.query(query, new Array(uniquePseudo, name,extension), (err, result) => {
     if (err) {
       console.error('Erreur lors de la création de la conversation:', err);
@@ -170,6 +180,7 @@ router.post('', [
       res.status(201).send(JSON.stringify(result[0][0]));
     }
   });
+  db.end();
 });
 router.post('/upload', uploadConversationImage.single('avatar'), (req, res) => {
   if (!req.file) {
@@ -201,8 +212,9 @@ router.post('/user', [
 
   isAdmin(token, id_conversation, parametre, addUser);
 });
-const addUser = function (parametre) {
+const addUser = async function (parametre) {
   const query = 'INSERT INTO `user-conversation` (uniquePseudo_user, id_conversation) VALUES (?, ?);';
+  const db = await dbConnexion();
   db.query(query, [parametre.uniquePseudo, parametre.id_conversation], (err, result) => {
     if (err) {
       console.error('Erreur lors de la création de la conversation:', err);
@@ -222,6 +234,7 @@ const addUser = function (parametre) {
       
     }
   });
+  db.end();
 }
 router.delete('/user', [
   query('uniquePseudo').notEmpty().withMessage('uniquePseudo requis'),
@@ -271,8 +284,9 @@ router.delete('/user/me', [
   deleteUser(parametre);
 
 });
-const deleteUser = function (parametre) {
+const deleteUser = async function (parametre) {
   const query = 'delete from `user-conversation` where id_conversation=? and uniquePseudo_user=?;';
+  const db = await dbConnexion();
   db.query(query, [parametre.id_conversation, parametre.uniquePseudo], (err, result) => {
     if (err) {
       console.error('Erreur lors de la suppression du user:', err);
@@ -283,6 +297,7 @@ const deleteUser = function (parametre) {
       parametre.res.status(201).send(JSON.stringify(result));
     }
   });
+  db.end();
 }
 router.delete('', [
   query('id_conversation').notEmpty().withMessage('id_conversation requis'),
@@ -305,8 +320,9 @@ router.delete('', [
 
 
 });
-const deleteConversation = function (parametre) {
+const deleteConversation = async function (parametre) {
   const query = 'delete from `conversation` where id=?;';
+  const db = await dbConnexion();
   db.query(query, [parametre.id_conversation], (err, result) => {
     if (err) {
       console.error('Erreur lors de la suppression de la conv:', err);
@@ -315,6 +331,7 @@ const deleteConversation = function (parametre) {
       parametre.res.status(201).send(JSON.stringify(result));
     }
   });
+  db.end();
 }
 
 router.put('', [
@@ -345,7 +362,7 @@ router.put('', [
   isAdmin(token, id_conversation, parametre, putConversation);
 });
 
-const putConversation = function (parametre) {
+const putConversation = async function (parametre) {
 
 
   const newConv = {
@@ -355,6 +372,7 @@ const putConversation = function (parametre) {
   };
 
   var queryUpdate = 'UPDATE conversation SET ? where id = ?';
+  const db = await dbConnexion();
   db.query(queryUpdate, [newConv, parametre.id_conversation], (err, result) => {
     if (err) {
       console.error('Erreur lors de la mise a jour de la conv:', err);
@@ -363,6 +381,7 @@ const putConversation = function (parametre) {
       parametre.res.status(201).send(JSON.stringify(result));
     }
   });
+  db.end();
 }
 
 module.exports = router;

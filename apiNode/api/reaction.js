@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { db } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
+const { dbConnexion } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
 const { io } = require('../pouic_serveur.js');
 
 const router = express.Router();
@@ -9,10 +9,11 @@ const { LIGNE_PAR_PAGES, SECRET_KEY, uploadFile } = require('../constantes.js');
 const { authenticateToken } = require('../middleware.js');
 
 
-function isInConv(token, id_conversation, parametre, func) {
+async function isInConv(token, id_conversation, parametre, func) {
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
     const query = "select * from `user-conversation` where uniquePseudo_user=? and id_conversation=?";
+    const db = await dbConnexion();
     db.query(query, [uniquePseudo, id_conversation], (err, result) => {
         if (err) {
             console.error('Erreur lors  :', err);
@@ -26,6 +27,7 @@ function isInConv(token, id_conversation, parametre, func) {
             }
         }
     });
+    db.end();
 }
 
 router.post('', [
@@ -39,6 +41,9 @@ router.post('', [
     const token = tokenHeader.split(' ')[1];
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
+
+    
+    const db = await dbConnexion();
 
     if (id_conversation != undefined) {
         const parametre = {
@@ -90,11 +95,13 @@ router.post('', [
             }
         });
     }
+    db.end();
 
 
 });
 
-const postReaction = function (parametre) {
+const postReaction = async function (parametre) {
+    const db = await dbConnexion();
     // Vérifier si la réaction existe déjà pour cet utilisateur et ce message
     const selectQuery = 'SELECT * FROM reactions WHERE message_id = ? AND user_uniquePseudo = ?';
     db.query(selectQuery, [parametre.id_message, parametre.uniquePseudo], (err, rows) => {
@@ -135,6 +142,7 @@ const postReaction = function (parametre) {
             });
         }
     });
+    db.end();
 }
 
 router.get('', [
@@ -150,6 +158,7 @@ router.get('', [
     var nbr_ligne = page * LIGNE_PAR_PAGES;
 
     const query = 'call getReaction(?,?,?);';
+    const db = await dbConnexion();
     db.query(query, [message_id, LIGNE_PAR_PAGES, nbr_ligne], (err, result) => {
         if (err) {
             console.error('Erreur lors de la creation du message:', err);
@@ -158,6 +167,7 @@ router.get('', [
             res.status(201).send(JSON.stringify(result[0]));
         }
     });
+    db.end();
 });
 
 router.delete('', [
@@ -171,6 +181,8 @@ router.delete('', [
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const uniquePseudo = decodedToken.uniquePseudo;
 
+    const db = await dbConnexion();
+
     const selectQuery = 'delete from reactions where message_id=? and user_uniquePseudo=?';
     db.query(selectQuery, [id_message, uniquePseudo], (err, rows) => {
         if (err) {
@@ -180,6 +192,7 @@ router.delete('', [
             res.status(201).json({ message: 'Réaction supprimé avec succès' });
         }
     });
+    db.end();
 
 
 });
