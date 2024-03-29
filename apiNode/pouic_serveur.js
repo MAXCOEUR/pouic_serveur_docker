@@ -106,8 +106,8 @@ function getLastDate(){
         dateLendemain.setSeconds(0); 
         dateLendemain.setDate(dateLendemain.getDate() + 1);
         
-        // Génération d'une heure aléatoire entre 6h et 1h du matin
-        const minuteAleatoire = 21600 + Math.floor(Math.random() * 68400);
+        // Génération d'une heure aléatoire entre 6h et 0h du matin
+        const minuteAleatoire = 21600 + Math.floor(Math.random() * 64800);
         heureAleatoire = new Date(dateLendemain);
         heureAleatoire.setHours(Math.floor(minuteAleatoire / 3600)); 
         heureAleatoire.setMinutes(Math.floor((minuteAleatoire % 3600) / 60)); 
