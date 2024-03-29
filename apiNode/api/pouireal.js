@@ -68,6 +68,26 @@ async function isPostedPouireal(uniquePseudo) {
         });
     });
 }
+async function getDateMoinsUn() {
+  return new Promise((resolve, reject) => {
+      const query = "SELECT * FROM timePouireal t order by 1 desc limit 2;";
+      const db = dbConnexion();
+      db.query(query, [], (err, result) => {
+          if (err) {
+              console.error('Erreur lors de la date du pouireal:', err);
+              reject(err);
+          } else {
+           try {
+              resolve(new Date(result[1]["date"]));
+           } catch (error) {
+            resolve(new Date(0));
+           }
+              
+          }
+          db.end();
+      });
+  });
+}
 
 router.get('/isPosted', [
     authenticateToken
@@ -120,11 +140,14 @@ router.get('', [
 
 const getPouireal = async function (parametre) {
     var isPosted = await isPostedPouireal(parametre.uniquePseudo);
+
+    var dateMoinUn = await getDateMoinsUn();
     const query = `
         SELECT *
         FROM pouireal
         NATURAL JOIN user
-        WHERE pouireal.id > ?
+        where pouireal.date > ? and
+        pouireal.id > ?
         AND pouireal.uniquePseudo_sender IN (
             SELECT DISTINCT u.uniquePseudo
             FROM user u
@@ -138,7 +161,7 @@ const getPouireal = async function (parametre) {
         LIMIT ?;
     `;
     const db = dbConnexion();
-    db.query(query, [parametre.id_lastPouireal, parametre.uniquePseudo, parametre.uniquePseudo, parametre.uniquePseudo,LIGNE_PAR_PAGES], (err, result) => {
+    db.query(query, [dateMoinUn, parametre.id_lastPouireal, parametre.uniquePseudo, parametre.uniquePseudo, parametre.uniquePseudo,LIGNE_PAR_PAGES], (err, result) => {
         if (err) {
             console.error('Erreur lors de la recuperation des message:', err);
             parametre.res.status(500).send(JSON.stringify({ 'message': 'Erreur lors de la recuperation des message' }));
