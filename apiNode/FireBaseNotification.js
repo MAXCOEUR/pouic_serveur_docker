@@ -26,7 +26,4 @@ function sendNotif(title,body,token) {
     });
 }
 
-
-//sendNotif("cIkCevzeQ0uSOxMzJha4z8:APA91bF359CZ_ajHElFuC6Nd-6Gl9UC-GR2hM5WxurluFORhHthd_2LfQkcFt8m2AFJqXOcebnY2aEVavxCttwLH75SXRJHRH4zE-Y7XrVk7BP86OWMPtSjhwr9TMnvAVG_yjkWMXzo3")
-
 module.exports={sendNotif};
