@@ -36,6 +36,7 @@ const messageRoutes = require('./api/message.js');
 const amisRoutes = require('./api/amis.js');
 const reactionRoutes = require('./api/reaction.js');
 const postRoutes = require('./api/post.js');
+const pouirealRoutes = require('./api/pouireal.js');
 
 app.use(bodyParser.json({ limit: '20mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '20mb' }));
@@ -70,6 +71,7 @@ app.use('/api/message/', messageRoutes);
 app.use('/api/amis/', amisRoutes);
 app.use('/api/reaction/', reactionRoutes);
 app.use('/api/post/',postRoutes);
+app.use('/api/pouireal/',pouirealRoutes)
 
 
 

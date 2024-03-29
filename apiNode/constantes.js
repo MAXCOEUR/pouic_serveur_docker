@@ -76,8 +76,33 @@ const storageFile = multer.diskStorage({
   }
 });
 
+const storagePouireal = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/pouireal');
+  },
+  filename: async function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const nameFile = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+
+    let id_pouireal = req.query.id_pouireal;
+    let nbr_picture = req.query.nbr_picture;
+
+    const query = (nbr_picture=='1')?"update pouireal set pouireal.linkPicture1=? where id=?;":"update pouireal set pouireal.linkPicture2=? where id=?;";
+    const db = dbConnexion();
+    db.query(query, [nameFile, id_pouireal], (err, result) => {
+      if (err) {
+        console.error('Erreur lors de la creation du message:', err);
+      } else {
+      }
+    });
+
+    cb(null, nameFile);
+  }
+});
+
 const uploadUserAvatar = multer({ storage: storageUserAvatar });
 const uploadConversationImage = multer({ storage: storageConversationImage });
 const uploadFile = multer({ storage: storageFile });
+const uploadPouireal = multer({ storage: storagePouireal });
 
-module.exports = { LIGNE_PAR_PAGES, SECRET_KEY, uploadUserAvatar, uploadConversationImage, uploadFile};
+module.exports = { LIGNE_PAR_PAGES, SECRET_KEY, uploadUserAvatar, uploadConversationImage, uploadFile, uploadPouireal};

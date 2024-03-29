@@ -9,8 +9,25 @@ ALTER SCHEMA `pouic`  DEFAULT COLLATE utf8mb4_unicode_ci;
 --
 -- Table structure for table `user`
 --
-
+DROP TABLE IF EXISTS `user-conversation`;
+DROP TABLE IF EXISTS `reactions`;
+DROP TABLE IF EXISTS `message-read`;
+DROP TABLE IF EXISTS `demandeAmis`;
+DROP TABLE IF EXISTS `amis`;
+DROP TABLE IF EXISTS `messages_pouireal`;
+DROP TABLE IF EXISTS `reactions_pouireal`;
+DROP TABLE IF EXISTS `pouireal`;
+DROP TABLE IF EXISTS `messages`;
+DROP TABLE IF EXISTS `conversation`;
+DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `user`;
+
+CREATE TABLE `timePouireal` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `date` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
 CREATE TABLE `user` (
   `email` varchar(255) NOT NULL,
   `uniquePseudo` varchar(80) NOT NULL,
@@ -28,10 +45,10 @@ CREATE TABLE `user` (
 -- Table structure for table `file`
 --
 
-DROP TABLE IF EXISTS `file`;
+
 CREATE TABLE `file` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `id_message` int(11) unsigned DEFAULT NULL,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `id_message` int unsigned DEFAULT NULL,
   `linkFile` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -41,9 +58,8 @@ CREATE TABLE `file` (
 -- Table structure for table `conversation`
 --
 
-DROP TABLE IF EXISTS `conversation`;
 CREATE TABLE `conversation` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `uniquePseudo_admin` varchar(80) NOT NULL,
   `extension` varchar(4) DEFAULT NULL,
@@ -55,14 +71,13 @@ CREATE TABLE `conversation` (
 -- Table structure for table `messages`
 --
 
-DROP TABLE IF EXISTS `messages`;
 CREATE TABLE `messages` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
   `uniquePseudo_sender` varchar(80) NOT NULL,
   `Message` text DEFAULT NULL,
   `date` datetime NOT NULL DEFAULT current_timestamp(),
-  `id_conversation` int(11) unsigned DEFAULT NULL,
-  `id_parent` int(11) unsigned DEFAULT NULL,
+  `id_conversation` int unsigned DEFAULT NULL,
+  `id_parent` int unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `message->user_idx` (`uniquePseudo_sender`),
   KEY `message->conversation_idx` (`id_conversation`),
@@ -70,16 +85,51 @@ CREATE TABLE `messages` (
   CONSTRAINT `message->conv` FOREIGN KEY (`id_conversation`) REFERENCES `conversation` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `message->messageParent` FOREIGN KEY (`id_parent`) REFERENCES `messages` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `message->user` FOREIGN KEY (`uniquePseudo_sender`) REFERENCES `user` (`uniquePseudo`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB ;
+) ENGINE=InnoDB;
+
+CREATE TABLE `pouireal` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `uniquePseudo_sender` varchar(80) NOT NULL,
+  `description` text DEFAULT NULL,
+  `date` datetime NOT NULL,
+  `linkPicture1` text DEFAULT NULL,
+  `linkPicture2` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `pouireal->user_idx` (`uniquePseudo_sender`),
+  CONSTRAINT `pouireal->user` FOREIGN KEY (`uniquePseudo_sender`) REFERENCES `user` (`uniquePseudo`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE `reactions_pouireal` (
+  `pouireal_id` int unsigned NOT NULL,
+  `user_uniquePseudo` varchar(80) NOT NULL,
+  `emoji` char(10) NOT NULL,
+  PRIMARY KEY (`user_uniquePseudo`,`pouireal_id`),
+  KEY `reactions_pouireal->pouireal_idx` (`pouireal_id`),
+  CONSTRAINT `reactions_pouireal->pouireal` FOREIGN KEY (`pouireal_id`) REFERENCES `pouireal` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `reactions_pouireal->user` FOREIGN KEY (`user_uniquePseudo`) REFERENCES `user` (`uniquePseudo`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB;
+
+CREATE TABLE `messages_pouireal` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `uniquePseudo_sender` varchar(80) NOT NULL,
+  `Message` text DEFAULT NULL,
+  `date` datetime NOT NULL DEFAULT current_timestamp(),
+  `id_pouireal` int unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `messages_pouireal->user_idx` (`uniquePseudo_sender`),
+  KEY `messages_pouireal->idx_pouireal` (`id_pouireal`),
+  CONSTRAINT `messages_pouireal->pouireal` FOREIGN KEY (`id_pouireal`) REFERENCES `pouireal` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `messages_pouireal->user` FOREIGN KEY (`uniquePseudo_sender`) REFERENCES `user` (`uniquePseudo`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
 --
 -- Table structure for table `amis`
 --
 
-DROP TABLE IF EXISTS `amis`;
 CREATE TABLE `amis` (
   `demandeur` varchar(80) NOT NULL,
   `receveur` varchar(80) NOT NULL,
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `amis-user_idx` (`demandeur`,`receveur`),
   KEY `tt_idx` (`receveur`),
@@ -92,11 +142,10 @@ CREATE TABLE `amis` (
 -- Table structure for table `demandeAmis`
 --
 
-DROP TABLE IF EXISTS `demandeAmis`;
 CREATE TABLE `demandeAmis` (
   `demandeur` varchar(80) NOT NULL,
   `receveur` varchar(80) NOT NULL,
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `amis-user_idx` (`demandeur`,`receveur`),
   KEY `tt_idx` (`receveur`),
@@ -108,15 +157,14 @@ CREATE TABLE `demandeAmis` (
 -- Table structure for table `message-read`
 --
 
-DROP TABLE IF EXISTS `message-read`;
 CREATE TABLE `message-read` (
-  `id_message` int(11) unsigned NOT NULL,
+  `id_message` int unsigned NOT NULL,
   `uniquePseudo_user` varchar(80) NOT NULL,
   PRIMARY KEY (`id_message`,`uniquePseudo_user`),
   KEY `message-read->user` (`uniquePseudo_user`),
   CONSTRAINT `message->message` FOREIGN KEY (`id_message`) REFERENCES `messages` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `message-read->user` FOREIGN KEY (`uniquePseudo_user`) REFERENCES `user` (`uniquePseudo`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 
 
@@ -124,31 +172,29 @@ CREATE TABLE `message-read` (
 -- Table structure for table `reactions`
 --
 
-DROP TABLE IF EXISTS `reactions`;
 CREATE TABLE `reactions` (
-  `message_id` int(11) unsigned NOT NULL,
+  `message_id` int unsigned NOT NULL,
   `user_uniquePseudo` varchar(80) NOT NULL,
   `emoji` char(10) NOT NULL,
   PRIMARY KEY (`user_uniquePseudo`,`message_id`),
   KEY `reaction->messages_idx` (`message_id`),
   CONSTRAINT `reaction->messages` FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `reaction->user` FOREIGN KEY (`user_uniquePseudo`) REFERENCES `user` (`uniquePseudo`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 --
 -- Table structure for table `user-conversation`
 --
 
-DROP TABLE IF EXISTS `user-conversation`;
 CREATE TABLE `user-conversation` (
   `uniquePseudo_user` varchar(80) NOT NULL,
-  `id_conversation` int(11) unsigned NOT NULL,
+  `id_conversation` int unsigned NOT NULL,
   PRIMARY KEY (`uniquePseudo_user`,`id_conversation`),
   KEY `user-conversation->conversation_idx` (`id_conversation`),
   KEY `user->user-conversation_idx` (`uniquePseudo_user`),
   CONSTRAINT `user->user-conversation` FOREIGN KEY (`uniquePseudo_user`) REFERENCES `user` (`uniquePseudo`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `user-conversation->conversation` FOREIGN KEY (`id_conversation`) REFERENCES `conversation` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 --
 -- Dumping routines for database 'discution'
@@ -764,4 +810,54 @@ BEGIN
 END ;;
 DELIMITER ;
 
--- Dump completed on 2023-09-17 13:09:45
+DELIMITER ;;
+CREATE DEFINER=`maxence`@`%` PROCEDURE `CreatePouireal`(
+  IN uniquePseudo VARCHAR(80),
+  IN description TEXT,
+  IN date DateTime
+)
+BEGIN
+    DECLARE new_messages_id INT;
+
+    insert into pouireal(uniquePseudo_sender,description,date) values (uniquePseudo,description,date);
+
+  
+    SET new_messages_id = LAST_INSERT_ID();
+  
+  
+    SELECT * FROM pouireal natural join user where pouireal.id=new_messages_id;
+END;;
+DELIMITER ;
+
+DELIMITER ;;
+CREATE DEFINER=`maxence`@`%` PROCEDURE `setReaction_pouireal`(
+    IN p_pouireal_id INT UNSIGNED,
+    IN p_user_uniquePseudo VARCHAR(80),
+    IN p_emoji CHAR(10)
+)
+BEGIN
+    DECLARE v_existing_row_count INT;
+
+    -- Vérifiez s'il existe déjà une ligne avec les clés primaires fournies
+    SELECT COUNT(*) INTO v_existing_row_count
+    FROM reactions_pouireal
+    WHERE pouireal_id = p_pouireal_id AND user_uniquePseudo = p_user_uniquePseudo;
+
+    IF v_existing_row_count > 0 THEN
+        -- Si une ligne existe, mettez à jour l'emoji
+        UPDATE reactions_pouireal
+        SET emoji = p_emoji
+        WHERE pouireal_id = p_pouireal_id AND user_uniquePseudo = p_user_uniquePseudo;
+    ELSE
+        -- Si aucune ligne n'existe, insérez une nouvelle ligne
+        INSERT INTO reactions_pouireal (pouireal_id, user_uniquePseudo, emoji)
+        VALUES (p_pouireal_id, p_user_uniquePseudo, p_emoji);
+    END IF;
+
+    -- Retournez la jointure avec la table "user"
+    SELECT r.pouireal_id,r.emoji, user.* -- Sélectionnez les colonnes nécessaires
+    FROM reactions_pouireal r
+    INNER JOIN user ON r.user_uniquePseudo = user.uniquePseudo
+    WHERE r.pouireal_id = p_pouireal_id AND r.user_uniquePseudo = p_user_uniquePseudo;
+END
+DELIMITER ;
