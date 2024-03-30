@@ -173,7 +173,7 @@ const getPouireal = async function (parametre) {
                     element["description"]=null;
                 });
             }
-            parametre.res.status(201).send(JSON.stringify(result));
+            parametre.res.status(200).send(JSON.stringify(result));
         }
         db.end();
     });
@@ -351,7 +351,7 @@ const deletePouireal = async function (parametre) {
                     })
                     );
                 } else {
-                parametre.res.status(201).send(JSON.stringify({
+                parametre.res.status(200).send(JSON.stringify({
                     id_pouireal: parametre.id_pouireal,
                 }));
                 }
@@ -469,7 +469,7 @@ router.post(
               JSON.stringify({ message: "Erreur lors de la recuperation de la reaction" })
             );
         } else {
-          parametre.res.status(201).send(JSON.stringify(result));
+          parametre.res.status(200).send(JSON.stringify(result));
         }
         db.end();
       }
@@ -576,7 +576,7 @@ router.post(
               JSON.stringify({ message: "Erreur lors de la recuperatuon des messages" })
             );
         } else {
-          parametre.res.status(201).send(JSON.stringify(result));
+          parametre.res.status(200).send(JSON.stringify(result));
         }
         db.end();
       }
@@ -629,7 +629,7 @@ router.post(
                 parametre.res.status(200).send({"id_delete":parametre.message_pouireal_id});
             }
             else{
-                parametre.res.status(201).send({message:"echec le message n'est pas a vous ou n'existe pas"});
+                parametre.res.status(400).send({message:"echec le message n'est pas a vous ou n'existe pas"});
             }
           
         }
