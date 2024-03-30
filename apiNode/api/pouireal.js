@@ -145,7 +145,7 @@ const getPouireal = async function (parametre) {
     const query = `
         SELECT *
         FROM pouireal
-        NATURAL JOIN user
+        JOIN user on pouireal.uniquePseudo_sender = user.uniquePseudo
         where pouireal.date > ? and
         pouireal.id > ?
         AND pouireal.uniquePseudo_sender IN (
