@@ -173,7 +173,7 @@ const getPouireal = async function (parametre) {
                     element["description"]=null;
                 });
             }
-            parametre.res.status(200).send(JSON.stringify(result));
+            parametre.res.status(200).send(JSON.stringify({"result" :result}));
         }
         db.end();
     });
@@ -235,7 +235,7 @@ const postPost = async function (parametre) {
             JSON.stringify({ message: "Erreur lors de la creation du message" })
           );
       } else {
-        parametre.res.status(201).send(JSON.stringify(result[0][0]));
+        parametre.res.status(201).send(JSON.stringify({"result" :result[0][0]}));
       }
       db.end();
     }
@@ -272,7 +272,7 @@ router.post(
             );
         } else {
             db.end();
-            return res.status(201).send(JSON.stringify(result[0]));
+            return res.status(201).send(JSON.stringify({"result" :result[0]}));
         }
         }
     );
@@ -416,7 +416,7 @@ router.post(
               JSON.stringify({ message: "Erreur lors de la creation de la reaction" })
             );
         } else {
-          parametre.res.status(201).send(JSON.stringify(result[0]));
+          parametre.res.status(201).send(JSON.stringify({"result":result[0]}));
         }
         db.end();
       }
@@ -469,7 +469,7 @@ router.post(
               JSON.stringify({ message: "Erreur lors de la recuperation de la reaction" })
             );
         } else {
-          parametre.res.status(200).send(JSON.stringify(result));
+          parametre.res.status(200).send(JSON.stringify({"result":result}));
         }
         db.end();
       }
@@ -576,7 +576,7 @@ router.post(
               JSON.stringify({ message: "Erreur lors de la recuperatuon des messages" })
             );
         } else {
-          parametre.res.status(200).send(JSON.stringify(result));
+          parametre.res.status(200).send(JSON.stringify({"result":result}));
         }
         db.end();
       }
