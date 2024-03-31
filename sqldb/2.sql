@@ -93,5 +93,5 @@ BEGIN
     FROM reactions_pouireal r
     INNER JOIN user ON r.user_uniquePseudo = user.uniquePseudo
     WHERE r.pouireal_id = p_pouireal_id AND r.user_uniquePseudo = p_user_uniquePseudo;
-END
+END;;
 DELIMITER ;
