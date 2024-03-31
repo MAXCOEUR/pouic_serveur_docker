@@ -172,7 +172,6 @@ const getPouireal = async function (parametre) {
 router.post(
   "",
   [
-    body("description").notEmpty().withMessage("description requis"),
     body("date").notEmpty().withMessage("date requis"),
     authenticateToken,
   ],
