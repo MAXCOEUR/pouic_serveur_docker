@@ -12,7 +12,7 @@ CREATE TABLE `timePouireal` (
 CREATE TABLE `pouireal` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `uniquePseudo_sender` varchar(80) NOT NULL,
-  `description` text DEFAULT NULL,
+  `description` text NOT NULL DEFAULT "",
   `date` datetime NOT NULL,
   `linkPicture1` text DEFAULT NULL,
   `linkPicture2` text DEFAULT NULL,
