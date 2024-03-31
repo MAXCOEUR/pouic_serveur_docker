@@ -43,29 +43,19 @@ async function isSenderPouireal(token, id_pouireal, parametre, func) {
   });
 }
 async function isPostedPouireal(uniquePseudo) {
+  var dateMoinUn = await getDateMoinsUn();
     return new Promise((resolve, reject) => {
-        const query = "SELECT * FROM timePouireal WHERE id = (SELECT MAX(id) FROM timePouireal);";
-        const db = dbConnexion();
-        db.query(query, [], (err, result) => {
-            if (err) {
-                console.error('Erreur lors de la date du pouireal:', err);
-                reject(err);
-            } else {
-                const date = new Date(result[0]["date"]);
-                const query = "SELECT id FROM pouireal WHERE uniquePseudo_sender = ? AND date >= ?;";
-                const db2 = dbConnexion();
-                db2.query(query, [uniquePseudo, date], (err, result) => {
-                    if (err) {
-                        console.error('Erreur lors de la date du pouireal:', err);
-                        reject(err);
-                    } else {
-                        resolve(result.length > 0);
-                    }
-                    db2.end();
-                });
-            }
-            db.end();
-        });
+      const query = "SELECT id FROM pouireal WHERE uniquePseudo_sender = ? AND date >= ?;";
+      const db2 = dbConnexion();
+      db2.query(query, [uniquePseudo, dateMoinUn], (err, result) => {
+          if (err) {
+              console.error('Erreur lors de la date du pouireal:', err);
+              reject(err);
+          } else {
+              resolve(result.length > 0);
+          }
+          db2.end();
+      });
     });
 }
 async function getDateMoinsUn() {
