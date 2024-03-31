@@ -84,8 +84,8 @@ const storagePouireal = multer.diskStorage({
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const nameFile = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
 
-    let id_pouireal = req.query.id_pouireal;
-    let nbr_picture = req.query.nbr_picture;
+    let id_pouireal = req.body.id_pouireal;
+    let nbr_picture = req.body.nbr_picture;
 
     const query = (nbr_picture=='1')?"update pouireal set pouireal.linkPicture1=? where id=?;":"update pouireal set pouireal.linkPicture2=? where id=?;";
     const db = dbConnexion();

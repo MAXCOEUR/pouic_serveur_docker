@@ -256,7 +256,7 @@ router.post(
         .send(JSON.stringify({ message: "Aucun fichier téléchargé." }));
     }
 
-    let id_pouireal = req.query.id_pouireal;
+    let id_pouireal = req.body.id_pouireal;
 
     const query = "SELECT * FROM pouireal natural join user where id=?;";
     const db = dbConnexion();
