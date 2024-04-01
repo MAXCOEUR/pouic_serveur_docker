@@ -95,12 +95,14 @@ function getLastDate(){
         date = new Date(0);
       }
 
-      if (date < Date.now()) {
+      var dateNow = Date()
+
+      if (date < dateNow) {
         let heureAleatoire;
         let delai;
 
         // Génération d'une date pour le lendemain
-        const dateLendemain = new Date(Date.now());
+        const dateLendemain = new Date(dateNow);
         dateLendemain.setHours(0); 
         dateLendemain.setMinutes(0); 
         dateLendemain.setSeconds(0); 
@@ -114,7 +116,7 @@ function getLastDate(){
         heureAleatoire.setSeconds(minuteAleatoire % 60); 
 
         // Calcul du délai jusqu'à cette heure aléatoire
-        delai = heureAleatoire.getTime() - Date.now();
+        delai = heureAleatoire.getTime() - dateNow.getTime();
     
         const query = "insert into timePouireal (date) values (?);";
         const db2 = dbConnexion();
@@ -129,7 +131,7 @@ function getLastDate(){
         });
     }
     else{
-      delai = date.getTime() - Date.now();
+      delai = date.getTime() - dateNow.getTime();
       console.log("seconde ",delai / 1000);
       console.log("minute ",delai / (1000 * 60));
       setTimeout(notificationPouireal, delai);
