@@ -30,6 +30,7 @@ services:
       - MYSQL_HOST=mysqlpouic
       - MYSQL_PORT=3306
       - API_PORT=3000
+      - TZ=Europe/Paris
     depends_on:
       - db
     links:

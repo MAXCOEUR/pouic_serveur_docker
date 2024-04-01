@@ -2,7 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const http = require("http");
 const SocketIo = require("socket.io");
-const moment = require('moment-timezone');
 const { dbConnexion } = require("./db");
 const { sendNotif } = require("./FireBaseNotification");
 
@@ -96,7 +95,7 @@ function getLastDate(){
         date = new Date(0);
       }
 
-      var dateNow = moment().tz('Europe/Paris').toDate();
+      var dateNow = Date.now();
 
       if (date < dateNow) {
         let heureAleatoire;
