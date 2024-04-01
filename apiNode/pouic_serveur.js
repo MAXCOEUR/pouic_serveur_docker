@@ -95,7 +95,7 @@ function getLastDate(){
         date = new Date(0);
       }
 
-      var dateNow = Date()
+      var dateNow = new Date()
 
       if (date < dateNow) {
         let heureAleatoire;
