@@ -11,6 +11,7 @@ services:
       MYSQL_DATABASE: pouic
       MYSQL_USER: maxence
       MYSQL_PASSWORD: Max2003?
+      TZ: Europe/Paris
     volumes:
       - ./sqldb:/docker-entrypoint-initdb.d
     restart: always
