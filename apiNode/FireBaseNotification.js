@@ -17,7 +17,6 @@ function sendNotif(title,body,token) {
       priority: 'high',
       notification: {
         sound: 'default',
-        vibrate: 'true'
       }
     }
   };
