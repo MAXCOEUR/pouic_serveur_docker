@@ -11,6 +11,14 @@ function sendNotif(title,body,token) {
     notification: {
       title: title,
       body: body,
+      // Ajoutez ces paramètres pour spécifier le comportement de la notification
+      android: {
+        priority: 'high',
+        notification: {
+          sound: 'default',
+          vibrate: 'true'
+        }
+      },
     },
     token: token,
   };
