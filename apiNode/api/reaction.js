@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const { dbConnexion } = require('../db'); // Importez votre connexion à la base de données depuis le fichier db.js
 const { io } = require('../pouic_serveur.js');
 
+const notification = require("../FireBaseNotification.js");
+
 const router = express.Router();
 const { query, body, validationResult } = require('express-validator');
 const { LIGNE_PAR_PAGES, SECRET_KEY, uploadFile } = require('../constantes.js');
@@ -92,6 +94,9 @@ router.post('', [
                                 res.status(500).json({ message: 'Erreur lors de l\'ajout de la réaction' });
                             } else {
                                 res.status(201).json({ message: 'Réaction ajoutée avec succès' });
+
+                                notification.sendNotifReactionPouic(id_message,"Pouic","nouvelle reaction "+emoji+" de "+uniquePseudo)
+
                             }
                             db3.end();
                         });

@@ -4,6 +4,8 @@ const { dbConnexion } = require('../db'); // Importez votre connexion à la base
 const { io } = require('../pouic_serveur.js');
 const fs = require('fs');
 
+const notification = require("../FireBaseNotification.js");
+
 const router = express.Router();
 const { query, body, validationResult } = require('express-validator');
 const { LIGNE_PAR_PAGES, SECRET_KEY, uploadFile } = require('../constantes.js');
@@ -185,6 +187,7 @@ const postPost = async function (parametre) {
             parametre.res.status(500).send(JSON.stringify({ 'message': 'Erreur lors de la creation du message' }));
         } else {
             parametre.res.status(201).send(JSON.stringify(result[0][0]));
+            notification.sendNotifAllFirends(parametre.uniquePseudo,"Pouic","Nouveau Pouic de "+parametre.uniquePseudo);
         }
         db.end();
     });

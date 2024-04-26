@@ -4,6 +4,8 @@ const { dbConnexion } = require("../db"); // Importez votre connexion à la base
 const { io } = require("../pouic_serveur.js");
 const fs = require("fs");
 
+const notification = require("../FireBaseNotification.js");
+
 const router = express.Router();
 const { query, body, validationResult } = require("express-validator");
 const {
@@ -225,6 +227,9 @@ const postPost = async function (parametre) {
           );
       } else {
         parametre.res.status(201).send(JSON.stringify({"result" :result[0][0]}));
+
+        notification.sendNotifAllFirends(parametre.uniquePseudo,"Pouireal 🔔","Nouveau Pouireal de "+parametre.uniquePseudo);
+
       }
       db.end();
     }
@@ -406,6 +411,7 @@ router.post(
             );
         } else {
           parametre.res.status(201).send(JSON.stringify({"result":result[0]}));
+          notification.sendNotifReactionPouireal(parametre.pouireal_id,"Pouireal 🔔","nouvelle reaction "+parametre.emoji+" de "+parametre.uniquePseudo);
         }
         db.end();
       }
