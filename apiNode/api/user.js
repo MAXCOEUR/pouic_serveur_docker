@@ -601,10 +601,9 @@ router.post(
                     email.createMailResetMdp(user.uniquePseudo, newPassword)
                   );
                   res.status(201).send(
-                      JSON.stringify(
-                        "le mot de passe a ete regenerer et un email a été envoyer a " +
-                          user.email
-                      )
+                      JSON.stringify({
+                        message: "le mot de passe a ete regenerer et un email a été envoyer a " +user.email
+                      })
                     );
                 } catch (error) {
                   console.error(
