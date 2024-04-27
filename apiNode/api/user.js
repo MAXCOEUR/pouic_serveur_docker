@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { dbConnexion } = require("../db"); // Importez votre connexion à la base de données depuis le fichier db.js
+const email = require("../email.js");
 
 const router = express.Router();
 const { query, body, validationResult } = require("express-validator");
@@ -541,5 +542,107 @@ router.delete("", [authenticateToken], async (req, res) => {
     db.end();
   });
 });
+
+router.post(
+  "/reset_mot_de_passe",
+  [body("emailOrPseudo").notEmpty().withMessage("emailOrPseudo requis")],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      // Envoyer une réponse avec les erreurs
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    var { emailOrPseudo } = req.body;
+
+    try {
+      const db = dbConnexion();
+
+      var newPassword = generatePassword();
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      const query = "SELECT * FROM user WHERE uniquePseudo = ? or email = ?;";
+      db.query(query, [emailOrPseudo, emailOrPseudo], async (err, results) => {
+        if (err) {
+          console.error("Erreur lors de la vérification de la connexion:", err);
+          res.status(500).send(
+            JSON.stringify({
+              message: "Erreur lors de la vérification de la connexion",
+            })
+          );
+        } else if (results.length === 0) {
+          res
+            .status(401)
+            .send(JSON.stringify({ message: "Email ou @ non trouvé" }));
+        } else {
+          var user = results[0];
+          const query = "update user set passWord=? WHERE uniquePseudo = ?";
+          const db2 = dbConnexion();
+          db2.query(
+            query,
+            [hashedPassword, user.uniquePseudo],
+            async (err, results) => {
+              if (err) {
+                console.error(
+                  "Erreur lors de la vérification de la connexion:",
+                  err
+                );
+                res.status(500).send(
+                  JSON.stringify({
+                    message: "Erreur lors de la vérification de la connexion",
+                  })
+                );
+              } else {
+                try {
+                  email.sendEmail(
+                    user.email,
+                    "Reset Mot de passe",
+                    email.createMailResetMdp(user.uniquePseudo, newPassword)
+                  );
+                  res.status(201).send(
+                      JSON.stringify(
+                        "le mot de passe a ete regenerer et un email a été envoyer a " +
+                          user.email
+                      )
+                    );
+                } catch (error) {
+                  console.error(
+                    "Erreur lors de l'envoie de mail",
+                    error
+                  );
+                  res.status(500).send(
+                    JSON.stringify({
+                      message: "Erreur lors de l'envoie de mail",
+                    })
+                  );
+                }
+              }
+              db2.end();
+            }
+          );
+        }
+        db.end();
+      });
+    } catch (error) {
+      console.error("Erreur lors du hachage du mot de passe:", error);
+      res.status(500).send(
+        JSON.stringify({
+          message: "Erreur lors de la création de l'utilisateur",
+        })
+      );
+    }
+  }
+);
+
+function generatePassword() {
+  length = 15;
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYZ0123456789";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
 
 module.exports = router;
