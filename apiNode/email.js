@@ -1,15 +1,11 @@
 var nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-    host: "smtp-mail.outlook.com",
+    host: "smtp-relay.brevo.com",
     port: 587,
-    tls: {
-      ciphers: "SSLv3",
-      rejectUnauthorized: false,
-    },
     auth: {
-      user: "pouic-logiciel@outlook.fr",
-      pass: "e6pB6wwDTH985TN5",
+      user: "8c3908001@smtp-brevo.com",
+      pass: "nyOb01LpATkJ5mZW",
     },
   });
 
